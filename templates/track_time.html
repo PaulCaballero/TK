@@ -1,0 +1,38 @@
+<!-- templates/track_time.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Time</title>
+</head>
+<body>
+    <h1>Time Entries</h1>
+
+    {% if time_entries %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Check-in Time</th>
+                    <th>Check-out Time</th>
+                    <th>Total Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in time_entries %}
+                    <tr>
+                        <td>{{ entry.CLOCKIN_DATETIME }}</td>
+                        <td>{{ entry.CLOCKOUT_DATETIME }}</td>
+                        <td>{{ entry.TOTAL_HRS }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No time entries available.</p>
+    {% endif %}
+
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>
