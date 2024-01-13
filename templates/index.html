@@ -1,0 +1,26 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timekeeping App</title>
+</head>
+<body>
+    <h1>Welcome to Timekeeping App</h1>
+
+    <form action="{{ url_for('track_time') }}" method="post">
+        <label for="id">ID:</label>
+        <input type="text" id="id" name="id" required><br>    
+
+        <label for="user_id">User ID:</label>
+        <input type="text" id="user_id" name="user_id" required><br>
+
+        <label for="task_description">Task Description:</label>
+        <input type="text" id="task_description" name="task_description" required><br>
+
+        <button type="submit">Track Time</button>
+    </form>
+</body>
+</html>
