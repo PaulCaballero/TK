@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    {% block head %}{% endblock %}
+    <script>
+        // Function to update the clock
+        function updateClock() {
+            const now = new Date(); // Get the current time
+            const hours = ('0' + now.getHours()).slice(-2); // Format the hours
+            const minutes = ('0' + now.getMinutes()).slice(-2); // Format the minutes
+            const seconds = ('0' + now.getSeconds()).slice(-2); // Format the seconds
+            document.getElementById('digital-clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update the clock every second
+        setInterval(updateClock, 1000);
+
+        // Call the function on initial load
+        window.onload = updateClock;
+    </script>
+    <style>
+        /* Custom style to prevent clock wrapping and to ensure it stays on the right */
+        .clock-container {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow mb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{{ url_for('home') }}" class="text-xl font-semibold">EBLO Timekeeper</a>
+                    </div>
+                    <!-- Navigation Links -->
+                    <div class="nav-links hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{{ url_for('home') }}" class="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium">Home</a>
+                        <!-- Ensure the logout link is always visible and clickable -->
+                        <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+                <!-- Clock Container -->
+                <!-- <div class="clock-container"> This ensures that the clock is pushed to the right -->
+                    <span id="digital-clock" class="text-xl lg:text-2xl font-semibold text-green-500"></span>
+                <!-- </div>  -->
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

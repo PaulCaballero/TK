@@ -1,38 +1,55 @@
-<!-- templates/track_time.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Track Time</title>
-</head>
-<body>
-    <h1>Time Entries</h1>
+{% extends 'base.html' %}
 
+{% block title %}Track Time{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h2 class="text-xl font-bold text-center text-gray-800 mb-4">Time Entries</h2>
+    <!-- Add download button -->
+    <div class="flex justify-center mb-4">
+        <a href="{{ url_for('download_time_entries') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Download CSV
+        </a>
+    </div>
+    <div class="flex justify-center gap-4 mb-4">
+        <form action="{{ url_for('add_time_entry') }}" method="post">
+            <input type="hidden" name="time_in" value="true">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Time In
+            </button>
+        </form>
+        <form action="{{ url_for('add_time_entry') }}" method="post">
+            <input type="hidden" name="time_out" value="true">
+            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Time Out
+            </button>
+        </form>
+    </div>
     {% if time_entries %}
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Check-in Time</th>
-                    <th>Check-out Time</th>
-                    <th>Total Hours</th>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white mx-auto">
+            <thead class="bg-gray-800 text-white">
+                <tr class="text-center">
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm">Date</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm">Time-In</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm">Time-Out</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm">Total Hours</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for entry in time_entries %}
-                    <tr>
-                        <td>{{ entry.CLOCKIN_DATETIME }}</td>
-                        <td>{{ entry.CLOCKOUT_DATETIME }}</td>
-                        <td>{{ entry.TOTAL_HRS }}</td>
-                    </tr>
-                {% endfor %}
+            <tbody class="text-gray-700">
+            {% for entry in time_entries %}
+            <tr class="text-center">
+                <td class="w-1/4 py-3 px-4">{{ entry[0] }}</td>
+                <td class="w-1/4 py-3 px-4">{{ entry[1] }}</td>
+                <td class="w-1/4 py-3 px-4">{{ entry[2] or 'N/A' }}</td>
+                <td class="w-1/4 py-3 px-4">{{ entry[3] or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
+    </div>
     {% else %}
-        <p>No time entries available.</p>
+        <p class="text-center text-gray-800">No time entries available.</p>
     {% endif %}
-
-    <a href="{{ url_for('home') }}">Back to Home</a>
-</body>
-</html>
+</div>
+{% endblock %}

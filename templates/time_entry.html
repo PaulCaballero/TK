@@ -1,15 +1,10 @@
 <!-- templates/time_entry.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Entry</title>
-</head>
-<body>
-    <h1>Time Entry</h1>
+{% extends 'base.html' %}
 
+{% block title %}Add Time Entry{% endblock %}
+
+{% block content %}
+    <h2>Add Time Entry</h2>
     <form action="{{ url_for('add_time_entry') }}" method="post">
         <label for="employee_id">Employee ID:</label>
         <input type="text" id="employee_id" name="employee_id" required><br>
@@ -25,5 +20,4 @@
 
         <button type="submit">Submit</button>
     </form>
-</body>
-</html>
+{% endblock %}

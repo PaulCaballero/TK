@@ -1,20 +1,77 @@
-<!-- templates/index.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timekeeping App</title>
-</head>
-<body>
-    <h1>Welcome to Timekeeping App</h1>
+{% extends 'base.html' %}
 
-    <form action="{{ url_for('track_time') }}" method="post">
-        <label for="user_id">User ID:</label>
-        <input type="text" id="user_id" name="user_id" required><br>
+{% block title %}Track Time{% endblock %}
 
-        <button type="submit">Track Time</button>
-    </form>
-</body>
-</html>
+{% block head %}
+<style>
+    @keyframes fadeOut {
+        0% {opacity: 1;}
+        100% {opacity: 0;}
+    }
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const messageBox = document.getElementById('message-box');
+        if (messageBox) {
+            setTimeout(() => {
+                messageBox.style.animation = 'fadeOut 1s forwards';
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}
+{% block content %}
+<div class="container mx-auto p-4">
+    <div class="text-right mb-4">
+        <h2 class="text-sm font-bold text-blue-600">Welcome, {{ user_id }}!</h2>
+    </div>
+    {% if message %}
+    <div id="message-box" class="mb-4 p-4 text-center rounded-full border-2 {{ 'border-green-500 text-green-500' if 'successful' in message.lower() else 'border-red-500 text-red-500' }}">
+        {{ message }}
+    </div>
+    {% endif %}
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Time Entries</h2>
+    <div class="flex gap-4">
+        <form action="{{ url_for('add_time_entry') }}" method="post">
+            <input type="hidden" name="time_in" value="true">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Time In
+            </button>
+        </form>
+        <form action="{{ url_for('add_time_entry') }}" method="post">
+            <input type="hidden" name="time_out" value="true">
+            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Time Out
+            </button>
+        </form>
+    </div>
+    {% if time_entries %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Date</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Time-In</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Time-Out</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Total Hours</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Late</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+            {% for entry in time_entries %}
+            <tr>
+                <td class="w-1/4 py-3 px-4 text-center">{{ entry[0] }}</td>
+                <td class="w-1/4 py-3 px-4 text-center {{ 'text-red-500' if entry[4] == 'LATE' else '' }}">{{ entry[1] }}</td>
+                <td class="w-1/4 py-3 px-4 text-center">{{ entry[2] or 'N/A' }}</td>
+                <td class="w-1/4 py-3 px-4 text-center">{{ entry[3] or 'N/A' }}</td>
+                <td class="w-1/4 py-3 px-4 text-center">{{ entry[4] }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="text-gray-800">No time entries available.</p>
+    {% endif %}
+</div>
+{% endblock %}

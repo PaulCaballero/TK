@@ -1,27 +1,50 @@
-<!-- templates/login.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-</head>
-<body>
-    <h1>Login</h1>
+{% extends 'base.html' %}
 
-    {% if message %}
-        <p style="color: red;">{{ message }}</p>
-    {% endif %}
+{% block title %}
+Login Page
+{% endblock %}
 
-    <form action="{{ url_for('authenticate') }}" method="post"> <!-- Corrected action URL -->
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br>
-
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
-
-        <button type="submit">Login</button>
-    </form>
-</body>
-</html>
+{% block content %}
+<div class="flex items-center justify-center h-screen bg-gray-100 px-4">
+    <div class="w-full max-w-xs">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            {% if error_message %}
+                <div id="error-message" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">{{ error_message }}</span>
+                </div>
+            {% endif %}
+            <form class="mt-4" action="{{ url_for('authenticate') }}" method="post">
+                <!-- Form Fields -->
+                <div>
+                    <label for="company" class="block text-gray-700 text-sm font-bold mb-2">Company</label>
+                    <input type="text" id="company" name="company" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div>
+                    <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <input type="text" id="username" name="username" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mt-4">
+                    <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="password" name="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>      
+ 
+<script>
+    // Check if the error message element exists
+    if (document.getElementById("error-message")) {
+    // Set a timeout to remove the error message after 10 seconds (10000 milliseconds)
+    setTimeout(function() {
+        document.getElementById("error-message").style.display = 'none';
+        }, 5000);
+    }
+</script>
+{% endblock %} 
