@@ -4,6 +4,9 @@ FROM python:3.8-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
 # Copy the current directory contents into the container at /app
 COPY . /app
 
