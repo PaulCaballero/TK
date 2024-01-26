@@ -8,8 +8,76 @@
         0% {opacity: 1;}
         100% {opacity: 0;}
     }
+    .even-row {
+        background-color: #f3f3f3; /* Light gray background for even rows */
+    }
+    .date-label {
+        display: inline-block;
+        background-color: #ecfdf5; /* Lighter shade of green for the label */
+        color: #059669; /* Green text color */
+        padding: 8px;
+        margin-right: 4px; /* Small margin between label and input */
+        border-radius: 6px; /* Slightly rounded corners for the label */
+        font-weight: 600; /* Make the label text slightly bold */
+    }
+    .date-input {
+        background-color: #f0fdf4; /* Light green background */
+        border: 2px solid #34d399; /* Darker green border */
+        padding: 8px 12px; /* Padding for better spacing */
+        border-radius: 8px; /* Rounded corners */
+    }
+    .input-with-label {
+        position: relative;
+    }
+    .input-with-label::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        background: rgba(255, 255, 255, 0.7); /* Slightly transparent background */
+        color: #4B5563; /* Gray color for the label text */
+        pointer-events: none;
+        font-size: 0.75rem; /* Smaller font size for the label text */
+        border-top-left-radius: 0.375rem; /* Tailwind's rounded-md */
+        border-bottom-left-radius: 0.375rem; /* Tailwind's rounded-md */
+    }
+
+    .input-with-label > input {
+        padding-left: 3rem; /* Make room for the label */
+    }
 </style>
 <script>
+    let activityTimeout;
+    let warningTimeout;
+    const warningDuration = 60 * 1000; // 1 minute warning duration
+
+    function resetTimer() {
+        clearTimeout(activityTimeout);
+        clearTimeout(warningTimeout);
+        activityTimeout = setTimeout(showWarning, 6 * 60 * 1000); // 6 minutes
+    }
+
+    function showWarning() {
+        // Show a warning popup to the user
+        alert("You have been inactive for 6 minutes. You will be logged out in 1 minute if there's no further activity.");
+
+        // Set another timeout for auto-logout
+        warningTimeout = setTimeout(autoLogout, warningDuration);
+    }
+
+    function autoLogout() {
+        // Redirect to logout URL or send a request to the server to end the session
+        window.location.href = '/logout'; // Assuming '/logout' is your logout route
+    }
+
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+
     document.addEventListener("DOMContentLoaded", function() {
         const messageBox = document.getElementById('message-box');
         if (messageBox) {
@@ -53,24 +121,38 @@
                     <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Date</th>
                     <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Time-In</th>
                     <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Time-Out</th>
-                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Total Hours</th>
-                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Late</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">Total Hours (hh:mm)</th>
+                    <th class="w-1/4 py-3 px-4 uppercase font-semibold text-sm text-center">OT_UT</th>
                 </tr>
             </thead>
             <tbody class="text-gray-700">
             {% for entry in time_entries %}
-            <tr>
+            <tr class="{{ 'even-row' if loop.index0 is even }}">
                 <td class="w-1/4 py-3 px-4 text-center">{{ entry[0] }}</td>
                 <td class="w-1/4 py-3 px-4 text-center {{ 'text-red-500' if entry[4] == 'LATE' else '' }}">{{ entry[1] }}</td>
-                <td class="w-1/4 py-3 px-4 text-center">{{ entry[2] or 'N/A' }}</td>
+                <td class="w-1/4 py-3 px-4 text-center {{ 'text-red-500' if entry[5] == 'UT' else 'OT' }}">{{ entry[2] }}</td>
                 <td class="w-1/4 py-3 px-4 text-center">{{ entry[3] or 'N/A' }}</td>
-                <td class="w-1/4 py-3 px-4 text-center">{{ entry[4] }}</td>
+                <td class="w-1/4 py-3 px-4 text-center">{{ entry[4] or 'N/A' }}</td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
+    </div>    
+    <div class="text-right my-4">
+        <form action="{{ url_for('download_csv') }}" method="get" class="flex justify-end items-center gap-2">
+            <div class="input-with-label" data-label="From:">
+                <input type="date" name="start_date" required class="bg-white border rounded-md py-2 pl-12 pr-3 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="input-with-label" data-label="To:">
+                <input type="date" name="end_date" required class="bg-white border rounded-md py-2 pl-12 pr-3 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">
+                Download CSV
+            </button>
+        </form>
     </div>
-    {% else %}
+    {% endif %}
+    {% if not time_entries %}
         <p class="text-gray-800">No time entries available.</p>
     {% endif %}
 </div>

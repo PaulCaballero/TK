@@ -1,15 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, Response
 from sqlalchemy import create_engine, text 
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import io
 import ibm_db
 import csv
-from flask import Response
 from sqlalchemy.exc import SQLAlchemyError
 from database_operations import DatabaseOperations
 
 app = Flask(__name__)
 app.secret_key = '!m@Tim3Keep3r' 
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=6)
 
 db_ops = DatabaseOperations()
 
@@ -30,13 +30,9 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
+    session.clear()
     
-    return redirect(url_for('home'))
-
-@app.route('/time_entry')
-def time_entry():
-    return render_template('time_entry.html')
+    return redirect(url_for('login'))
 
 @app.route('/authenticate', methods=['POST'])
 def authenticate():
@@ -47,7 +43,6 @@ def authenticate():
         row = db_ops.get_user_credentials(username, password, company)
 
         # Fetch the first row
-        print(row)
         if row:
             # Store user ID in session for authentication
             # user_id = row[0]
@@ -99,25 +94,62 @@ def add_time_entry():
     # This part will execute for both GET and POST requests
     time_entries = db_ops.select_time_entries(user_id)
     processed_entries = process_time_entries(time_entries)
-    print(processed_entries)
+   
     
 
     # Use a dictionary to pass all variables to the template at once
     return render_template('index.html', time_entries=processed_entries, message=message, user_id=user_id)
 
+@app.route('/download_csv')
+def download_csv():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))  # Redirect to login if not authenticated
+
+    # Retrieve start and end dates from query parameters
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    # Convert start and end dates from string to datetime objects
+    start_date = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+    end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+
+    # Modify this function to filter based on the provided dates
+    time_entries = db_ops.select_time_entries_for_csv(user_id, start_date, end_date)
+    headers = ['Date', 'Time-In', 'Time-Out', 'Total Hours', 'OT_UT'] # Define the CSV headers
+
+    # Create a generator for CSV data
+    def generate_csv():
+        yield ','.join(headers) + '\n'  # First yield the headers
+        for entry in time_entries:
+            # Format Time-In and Time-Out
+            formatted_entry = [
+                format_date(entry[0]),  # Date
+                format_datetime(entry[1], '%H:%M:%S'),  # Time-In
+                format_datetime(entry[2], '%H:%M:%S'),  # Time-Out
+                str(entry[3]),  # Total Hours
+                str(entry[4])   # OT_UT
+            ]
+            yield ','.join(formatted_entry) + '\n'
+
+    # Create a response with the CSV data
+    return Response(
+        generate_csv(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=time_entries.csv'}
+    )
+
 def process_time_entries(time_entries):
     # Process time entries to extract date, time-in, time-out, and calculate total_hours
     processed_entries = []
     for entry in time_entries:
-        clockin_datetime, clockout_datetime, total_hours, status = entry  # Unpack the tuple
-        print(status)
+        date, clockin_datetime, clockout_datetime, total_hours, status, ot_ut = entry  # Unpack the tuple
         total_hours = calculate_total_hours(clockin_datetime, clockout_datetime)
 
-        date = format_datetime(clockin_datetime, '%Y-%m-%d')
+        # date = format_datetime(date, '%Y-%m-%d')
         time_in = format_datetime(clockin_datetime, '%H:%M:%S')
         time_out = format_datetime(clockout_datetime, '%H:%M:%S')
-
-        processed_entries.append((date, time_in, time_out, total_hours, status))
+        processed_entries.append((date, time_in, time_out, total_hours, status, ot_ut))
     return processed_entries
 
 def calculate_total_hours(clockin, clockout):
@@ -127,29 +159,16 @@ def calculate_total_hours(clockin, clockout):
         hours = int(total_seconds // 3600)
         minutes = int((total_seconds % 3600) // 60)
         return f"{hours:02d}:{minutes:02d}"
-    return 'N/A'
+    return '--:--'
 
 def format_datetime(dt, format_string):
     # Format datetime object to string if it's not None, otherwise return 'N/A'
-    return dt.strftime(format_string) if isinstance(dt, datetime) else 'N/A'
+    return dt.strftime(format_string) if isinstance(dt, datetime) else '--:--'
 
+def format_date(d):
+    """Format date object to string if it's not None, otherwise return 'N/A'."""
+    return d.strftime('%Y-%m-%d') if isinstance(d, date) else 'N/A'
 
-@app.route('/download')
-def download_time_entries():
-    time_entries = [...]  # Fetch your time entries here
-    si = io.StringIO()  # Creates an in-memory file-like string buffer
-    cw = csv.writer(si)
-    cw.writerow(['Date', 'Time-In', 'Time-Out', 'Total Hours'])  # CSV Header
-
-    for entry in time_entries:
-        cw.writerow([entry[0], entry[1], entry[2], entry[3] or 'N/A'])  # Write each row
-
-    output = si.getvalue()
-    return Response(
-        output,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=time_entries.csv"}
-    )
 
 if __name__ == '__main__':
     app.run(debug=True)
