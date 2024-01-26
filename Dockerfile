@@ -1,21 +1,21 @@
-FROM registry.access.redhat.com/ubi8/python-39
+# Use an official Python runtime as a parent image
+FROM python:3.8-slim
 
-# Add application sources with correct permissions for OpenShift
-USER 0
-ADD app-src .
-RUN chown -R 1001:0 ./
-USER 1001
-
+# Set the working directory in the container
 WORKDIR /app
 
-COPY ./requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-RUN pip install -U "pip>=19.3.1"
-RUN pip3 install -r requirements.txt
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-COPY . .
-ENV FLASK_APP=app
+# Make port 5000 available to the world outside this container
 EXPOSE 5000
 
-CMD python app.py runserver 0.0.0.0:5000
+# Define environment variable
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+
+# Run app.py when the container launches
+CMD ["flask", "run"]
