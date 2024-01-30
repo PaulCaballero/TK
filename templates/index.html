@@ -3,90 +3,7 @@
 {% block title %}Track Time{% endblock %}
 
 {% block head %}
-<style>
-    @keyframes fadeOut {
-        0% {opacity: 1;}
-        100% {opacity: 0;}
-    }
-    .even-row {
-        background-color: #f3f3f3; /* Light gray background for even rows */
-    }
-    .date-label {
-        display: inline-block;
-        background-color: #ecfdf5; /* Lighter shade of green for the label */
-        color: #059669; /* Green text color */
-        padding: 8px;
-        margin-right: 4px; /* Small margin between label and input */
-        border-radius: 6px; /* Slightly rounded corners for the label */
-        font-weight: 600; /* Make the label text slightly bold */
-    }
-    .date-input {
-        background-color: #f0fdf4; /* Light green background */
-        border: 2px solid #34d399; /* Darker green border */
-        padding: 8px 12px; /* Padding for better spacing */
-        border-radius: 8px; /* Rounded corners */
-    }
-    .input-with-label {
-        position: relative;
-    }
-    .input-with-label::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 12px;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        padding: 0 8px;
-        background: rgba(255, 255, 255, 0.7); /* Slightly transparent background */
-        color: #4B5563; /* Gray color for the label text */
-        pointer-events: none;
-        font-size: 0.75rem; /* Smaller font size for the label text */
-        border-top-left-radius: 0.375rem; /* Tailwind's rounded-md */
-        border-bottom-left-radius: 0.375rem; /* Tailwind's rounded-md */
-    }
-
-    .input-with-label > input {
-        padding-left: 3rem; /* Make room for the label */
-    }
-</style>
-<script>
-    let activityTimeout;
-    let warningTimeout;
-    const warningDuration = 60 * 1000; // 1 minute warning duration
-
-    function resetTimer() {
-        clearTimeout(activityTimeout);
-        clearTimeout(warningTimeout);
-        activityTimeout = setTimeout(showWarning, 6 * 60 * 1000); // 6 minutes
-    }
-
-    function showWarning() {
-        // Show a warning popup to the user
-        alert("You have been inactive for 6 minutes. You will be logged out in 1 minute if there's no further activity.");
-
-        // Set another timeout for auto-logout
-        warningTimeout = setTimeout(autoLogout, warningDuration);
-    }
-
-    function autoLogout() {
-        // Redirect to logout URL or send a request to the server to end the session
-        window.location.href = '/logout'; // Assuming '/logout' is your logout route
-    }
-
-    window.onload = resetTimer;
-    document.onmousemove = resetTimer;
-    document.onkeypress = resetTimer;
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const messageBox = document.getElementById('message-box');
-        if (messageBox) {
-            setTimeout(() => {
-                messageBox.style.animation = 'fadeOut 1s forwards';
-            }, 5000);
-        }
-    });
-</script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 {% endblock %}
 {% block content %}
 <div class="container mx-auto p-4">
@@ -114,7 +31,7 @@
         </form>
     </div>
     {% if time_entries %}
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto mb-4">
         <table class="min-w-full bg-white">
             <thead class="bg-gray-800 text-white">
                 <tr>
@@ -138,6 +55,15 @@
             </tbody>
         </table>
     </div>    
+    <div class="flex justify-center">  <!-- Center the pagination controls -->
+        <div class="inline-flex border border-gray-300 rounded">  <!-- Add border and rounded corners -->
+            {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('add_time_entry', page=p) }}" class="px-3 py-1 border-r border-gray-300 {{ 'bg-blue-500 text-white' if p == current_page else 'text-blue-500 hover:bg-blue-100' }}">
+                    {{ p }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
     <div class="text-right my-4">
         <form action="{{ url_for('download_csv') }}" method="get" class="flex justify-end items-center gap-2">
             <div class="input-with-label" data-label="From:">
@@ -146,7 +72,8 @@
             <div class="input-with-label" data-label="To:">
                 <input type="date" name="end_date" required class="bg-white border rounded-md py-2 pl-12 pr-3 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
             </div>
-            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md" 
+                {% if pos != 'Superuser' %}disabled{% endif %}>
                 Download CSV
             </button>
         </form>

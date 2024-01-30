@@ -49,6 +49,7 @@ def authenticate():
             # sk_emp = row[1]
             session['user_id'] = row[0]
             session['sk_emp'] = row[1]
+            session['pos'] = row[2]
             print("Invoke AddTimeEntry module")
             return redirect(url_for('add_time_entry'))  # Redirect to add_time_entry on successful login
             
@@ -63,7 +64,11 @@ def authenticate():
 def add_time_entry():
     user_id = session.get('user_id')
     sk_emp = session.get('sk_emp')
+    pos = session.get('pos')
     message = None  
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    total_entries = db_ops.count_time_entries(user_id)
 
     if not user_id:
         return redirect(url_for('login'))  # Redirect to login if not authenticated
@@ -88,17 +93,15 @@ def add_time_entry():
                 else:
                     message = 'No time-in entry found for today to clock out.'
                     
-            
         except SQLAlchemyError as e:
             message = f"Database error: {str(e)}"
     # This part will execute for both GET and POST requests
-    time_entries = db_ops.select_time_entries(user_id)
+    time_entries = db_ops.select_time_entries(user_id, page, per_page)
     processed_entries = process_time_entries(time_entries)
    
-    
-
     # Use a dictionary to pass all variables to the template at once
-    return render_template('index.html', time_entries=processed_entries, message=message, user_id=user_id)
+    return render_template('index.html', time_entries=processed_entries, message=message, user_id=user_id, pos=pos, total_pages=(total_entries // per_page + (total_entries % per_page > 0)),
+                           current_page=page)
 
 @app.route('/download_csv')
 def download_csv():
@@ -116,19 +119,22 @@ def download_csv():
 
     # Modify this function to filter based on the provided dates
     time_entries = db_ops.select_time_entries_for_csv(user_id, start_date, end_date)
-    headers = ['Date', 'Time-In', 'Time-Out', 'Total Hours', 'OT_UT'] # Define the CSV headers
+    headers = ['Employee Name', 'Date', 'Time-In', 'Time-Out', 'Total Hours(hh:mm)', 'OT(hh:mm)'] # Define the CSV headers
 
     # Create a generator for CSV data
     def generate_csv():
         yield ','.join(headers) + '\n'  # First yield the headers
         for entry in time_entries:
             # Format Time-In and Time-Out
+            total_hrs = calculate_total_hours(entry[2], entry[3])
+            ot = calculate_total_hours(entry[7], entry[3])
             formatted_entry = [
-                format_date(entry[0]),  # Date
-                format_datetime(entry[1], '%H:%M:%S'),  # Time-In
-                format_datetime(entry[2], '%H:%M:%S'),  # Time-Out
-                str(entry[3]),  # Total Hours
-                str(entry[4])   # OT_UT
+                entry[0],
+                format_date(entry[1]),  # Date
+                format_datetime(entry[2], '%H:%M:%S'),  # Time-In
+                format_datetime(entry[3], '%H:%M:%S'),  # Time-Out
+                total_hrs,  # Total Hours
+                ot   # OT_UT
             ]
             yield ','.join(formatted_entry) + '\n'
 
@@ -145,7 +151,6 @@ def process_time_entries(time_entries):
     for entry in time_entries:
         date, clockin_datetime, clockout_datetime, total_hours, status, ot_ut = entry  # Unpack the tuple
         total_hours = calculate_total_hours(clockin_datetime, clockout_datetime)
-
         # date = format_datetime(date, '%Y-%m-%d')
         time_in = format_datetime(clockin_datetime, '%H:%M:%S')
         time_out = format_datetime(clockout_datetime, '%H:%M:%S')
