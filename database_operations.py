@@ -11,6 +11,7 @@ class DatabaseOperations:
         db_port = os.getenv('port', 'default_port')  # Default port if not specified
         db_name = os.getenv('database')
 
+        conn_str = f"db2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?SECURITY=ssl"
         
         self.conn = create_engine(conn_str).connect()
 
