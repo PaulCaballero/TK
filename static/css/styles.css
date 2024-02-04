@@ -1,0 +1,74 @@
+@keyframes fadeOut {
+    0% {opacity: 1;}
+    100% {opacity: 0;}
+}
+.even-row {
+    background-color: #f3f3f3; /* Light gray background for even rows */
+}
+.date-label {
+    display: inline-block;
+    background-color: #ecfdf5; /* Lighter shade of green for the label */
+    color: #059669; /* Green text color */
+    padding: 8px;
+    margin-right: 4px; /* Small margin between label and input */
+    border-radius: 6px; /* Slightly rounded corners for the label */
+    font-weight: 600; /* Make the label text slightly bold */
+}
+.date-input {
+    background-color: #f0fdf4; /* Light green background */
+    border: 2px solid #34d399; /* Darker green border */
+    padding: 8px 12px; /* Padding for better spacing */
+    border-radius: 8px; /* Rounded corners */
+}
+.input-with-label {
+    position: relative;
+}
+.input-with-label::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.7); /* Slightly transparent background */
+    color: #4B5563; /* Gray color for the label text */
+    pointer-events: none;
+    font-size: 0.75rem; /* Smaller font size for the label text */
+    border-top-left-radius: 0.375rem; /* Tailwind's rounded-md */
+    border-bottom-left-radius: 0.375rem; /* Tailwind's rounded-md */
+}
+
+.input-with-label > input {
+    padding-left: 3rem; /* Make room for the label */
+}
+
+.embossed-effect {
+    background: #ffffff; /* Base color */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow:
+        inset 1px 1px 2px rgba(255, 255, 255, 0.8), /* Top left inner shadow */
+        inset -1px -1px 2px rgba(0, 0, 0, 0.2); /* Bottom right inner shadow */
+    border: 1px solid #d1d1d1; /* Slight border for more depth */
+}
+
+.pagination a {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.pagination a.active {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Custom style to prevent clock wrapping and to ensure it stays on the right */
+.clock-container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
