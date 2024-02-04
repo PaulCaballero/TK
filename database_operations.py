@@ -18,9 +18,9 @@ class DatabaseOperations:
     def get_user_credentials(self, username, password, company):
         try:
             stmt_select = text("""
-                SELECT E.EMPLOYEE_ID, E.SK_EMPLOYEE, E.POSITION FROM USERACCOUNT UA 
-                INNER JOIN QQW84224.EMPLOYEE E ON UA.SK_EMPLOYEE = E.SK_EMPLOYEE
-                INNER JOIN QQW84224.COMPANY C ON E.SK_COMPANY = C.SK_COMPANY
+                SELECT E.EMPLOYEE_ID, E.SK_EMPLOYEE, E.POSITION FROM EBLO.USERACCOUNT UA 
+                INNER JOIN EBLO.EMPLOYEE E ON UA.SK_EMPLOYEE = E.SK_EMPLOYEE
+                INNER JOIN EBLO.COMPANY C ON E.SK_COMPANY = C.SK_COMPANY
                 WHERE USERNAME = :username AND PASSWORD = :password AND COMPANY_ID = :company
             """).bindparams(username=username, password=password, company=company)
 
@@ -32,8 +32,8 @@ class DatabaseOperations:
     def get_time_in(self, user_id):
         try:
             stmt_check_entry = text("""
-                SELECT SK_TIME_ENTRY  FROM EMPLOYEE e
-                INNER JOIN TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
+                SELECT SK_TIME_ENTRY  FROM EBLO.EMPLOYEE e
+                INNER JOIN EBLO.TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
                 WHERE e.EMPLOYEE_ID = :user_id
                 AND DATE(CLOCKIN_DATETIME) = DATE((CURRENT TIMESTAMP - CURRENT TIMEZONE) + 8 HOURS)
             """).bindparams(user_id=user_id)
@@ -46,8 +46,8 @@ class DatabaseOperations:
     def get_time_out(self, user_id):
         try:
             stmt_check_entry = text("""
-                SELECT SK_TIME_ENTRY  FROM EMPLOYEE e
-                INNER JOIN TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
+                SELECT SK_TIME_ENTRY  FROM EBLO.EMPLOYEE e
+                INNER JOIN EBLO.TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
                 WHERE e.EMPLOYEE_ID = :user_id
                 AND DATE(CLOCKIN_DATETIME) = DATE((CURRENT TIMESTAMP - CURRENT TIMEZONE) + 8 HOURS)
                 AND CLOCKOUT_DATETIME IS NULL
@@ -60,7 +60,7 @@ class DatabaseOperations:
     def insert_time_in(self, sk_emp):
         try:
             stmt_insert_entry = text("""
-                INSERT INTO TIMEENTRIES (SK_EMPLOYEE, CLOCKIN_DATETIME)
+                INSERT INTO EBLO.TIMEENTRIES (SK_EMPLOYEE, CLOCKIN_DATETIME)
                 VALUES (:sk_emp, (CURRENT TIMESTAMP - CURRENT TIMEZONE) + 8 HOURS)
             """).bindparams(sk_emp=sk_emp)
 
@@ -71,7 +71,7 @@ class DatabaseOperations:
     def insert_time_out(self, sk_time_entry):
         try:
             stmt_update_entry = text("""
-                UPDATE TimeEntries
+                UPDATE EBLO.TimeEntries
                 SET CLOCKOUT_DATETIME = (CURRENT TIMESTAMP - CURRENT TIMEZONE) + 8 HOURS,
                 TOTAL_HRS = RIGHT('0' || TRUNC((MIDNIGHT_SECONDS(CLOCKOUT_DATETIME) - MIDNIGHT_SECONDS(CLOCKIN_DATETIME)) / 3600), 2) || ':' ||
                     RIGHT('0' || MOD(TRUNC((MIDNIGHT_SECONDS(CLOCKOUT_DATETIME) - MIDNIGHT_SECONDS(CLOCKIN_DATETIME)) / 60), 60), 2) || ':' ||
@@ -90,9 +90,9 @@ class DatabaseOperations:
                 SELECT DATE(t.CLOCKIN_DATETIME), t.CLOCKIN_DATETIME, t.CLOCKOUT_DATETIME, t.TOTAL_HRS, 
                     CASE WHEN TO_CHAR(t.CLOCKIN_DATETIME, 'HH24:MI:SS') > s.SHIFT_TIMEIN THEN 'LATE' END AS STATUS,
                     CASE WHEN TO_CHAR(t.CLOCKOUT_DATETIME, 'HH24:MI:SS') > s.SHIFT_TIMEOUT THEN 'OT' ELSE 'UT' END AS OT_UT                   
-                FROM EMPLOYEE e 
-                INNER JOIN SHIFT s ON e.SK_SHIFT = s.SK_SHIFT 
-                INNER JOIN TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
+                FROM EBLO.EMPLOYEE e 
+                INNER JOIN EBLO.SHIFT s ON e.SK_SHIFT = s.SK_SHIFT 
+                INNER JOIN EBLO.TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
                 WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EMPLOYEE WHERE POSITION = 'Superuser') OR 
                     (e.EMPLOYEE_ID = :user_id))
                 ORDER BY t.CLOCKIN_DATETIME DESC
@@ -109,9 +109,9 @@ class DatabaseOperations:
         try:
             stmt_count_entries = text("""
                 SELECT COUNT(*)
-                FROM TIMEENTRIES t
-                INNER JOIN EMPLOYEE e ON t.SK_EMPLOYEE = e.SK_EMPLOYEE
-                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EMPLOYEE WHERE POSITION = 'Superuser') OR 
+                FROM EBLO.TIMEENTRIES t
+                INNER JOIN EBLO.EMPLOYEE e ON t.SK_EMPLOYEE = e.SK_EMPLOYEE
+                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EBLO.EMPLOYEE WHERE POSITION = 'Superuser') OR 
                     (e.EMPLOYEE_ID = :user_id))
             """).bindparams(user_id=user_id)
 
@@ -121,7 +121,6 @@ class DatabaseOperations:
         except SQLAlchemyError as e:
             raise
 
-    
     def select_time_entries_for_csv(self, user_id, start_date, end_date):
         try:
             stmt_select_entries = text("""
@@ -129,10 +128,10 @@ class DatabaseOperations:
                     CASE WHEN TO_CHAR(t.CLOCKIN_DATETIME, 'HH24:MI:SS') > s.SHIFT_TIMEIN THEN 'LATE' END AS STATUS,
                     CASE WHEN TO_CHAR(t.CLOCKOUT_DATETIME, 'HH24:MI:SS') > s.SHIFT_TIMEOUT THEN 'OT' ELSE 'UT' END AS OT_UT, 
                     TIMESTAMP(DATE(t.CLOCKOUT_DATETIME), s.SHIFT_TIMEOUT) AS SHIFT_TIMEOUT_DATETIME                     
-                FROM EMPLOYEE e 
-                INNER JOIN SHIFT s ON e.SK_SHIFT = s.SK_SHIFT 
-                INNER JOIN TIMEENTRIES t ON e.SK_EMPLOYEE =t.SK_EMPLOYEE 
-                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EMPLOYEE WHERE POSITION = 'Superuser') OR 
+                FROM EBLO.EMPLOYEE e 
+                INNER JOIN EBLO.SHIFT s ON e.SK_SHIFT = s.SK_SHIFT 
+                INNER JOIN EBLO.TIMEENTRIES t ON e.SK_EMPLOYEE =t.SK_EMPLOYEE 
+                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EBLO.EMPLOYEE WHERE POSITION = 'Superuser') OR 
                     (e.EMPLOYEE_ID = :user_id)) AND (DATE(t.CLOCKIN_DATETIME)>= :start_date AND DATE(t.CLOCKIN_DATETIME)<= :end_date)
                 ORDER BY FULLNAME, t.CLOCKIN_DATETIME DESC
             """).bindparams(user_id=user_id, start_date=start_date, end_date=end_date)
