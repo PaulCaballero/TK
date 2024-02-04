@@ -11,7 +11,6 @@ class DatabaseOperations:
         db_port = os.getenv('port', 'default_port')  # Default port if not specified
         db_name = os.getenv('database')
 
-        conn_str = f"db2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?SECURITY=ssl"
         
         self.conn = create_engine(conn_str).connect()
 
@@ -93,7 +92,7 @@ class DatabaseOperations:
                 FROM EBLO.EMPLOYEE e 
                 INNER JOIN EBLO.SHIFT s ON e.SK_SHIFT = s.SK_SHIFT 
                 INNER JOIN EBLO.TIMEENTRIES t ON e.SK_EMPLOYEE = t.SK_EMPLOYEE 
-                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EMPLOYEE WHERE POSITION = 'Superuser') OR 
+                WHERE (:user_id IN (SELECT EMPLOYEE_ID FROM EBLO.EMPLOYEE WHERE POSITION = 'Superuser') OR 
                     (e.EMPLOYEE_ID = :user_id))
                 ORDER BY t.CLOCKIN_DATETIME DESC
                 LIMIT :per_page OFFSET :offset
