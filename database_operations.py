@@ -3,7 +3,6 @@ from sqlalchemy.exc import SQLAlchemyError
 import os
 class DatabaseOperations:
     def __init__(self):
-        # self.conn = connection
         
         # Configure DB2 Connection
         db_user = os.getenv('uid')
@@ -13,6 +12,7 @@ class DatabaseOperations:
         db_name = os.getenv('database')
 
         conn_str = f"db2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?SECURITY=ssl"
+        
         self.conn = create_engine(conn_str).connect()
 
     def get_user_credentials(self, username, password, company):

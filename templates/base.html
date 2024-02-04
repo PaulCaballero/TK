@@ -6,31 +6,7 @@
     <title>{% block title %}{% endblock %}</title>
     <!-- Tailwind CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    {% block head %}{% endblock %}
-    <script>
-        // Function to update the clock
-        function updateClock() {
-            const now = new Date(); // Get the current time
-            const hours = ('0' + now.getHours()).slice(-2); // Format the hours
-            const minutes = ('0' + now.getMinutes()).slice(-2); // Format the minutes
-            const seconds = ('0' + now.getSeconds()).slice(-2); // Format the seconds
-            document.getElementById('digital-clock').textContent = `${hours}:${minutes}:${seconds}`;
-        }
-
-        // Update the clock every second
-        setInterval(updateClock, 1000);
-
-        // Call the function on initial load
-        window.onload = updateClock;
-    </script>
-    <style>
-        /* Custom style to prevent clock wrapping and to ensure it stays on the right */
-        .clock-container {
-            display: flex;
-            justify-content: flex-end;
-            width: 100%;
-        }
-    </style>
+    {% block head %}<script src="{{ url_for('static', filename='js/script.js') }}"></script>{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body class="bg-gray-100">
@@ -40,7 +16,7 @@
                 <div class="flex items-center">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ url_for('home') }}" class="text-xl font-semibold">EBLO Timekeeper</a>
+                        <img src="{{ url_for('static', filename='images/abp_logo.jpg') }}" alt="EBLO Timekeeper Logo" style="height: 60px; width: auto;">
                     </div>
                     <!-- Navigation Links -->
                     <div class="nav-links hidden sm:ml-6 sm:flex sm:space-x-8">
