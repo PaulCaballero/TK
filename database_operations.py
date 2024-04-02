@@ -6,11 +6,11 @@ class DatabaseOperations:
     def __init__(self, schema_name=None):
         
         # Configure DB2 Connection
-        db_user = 'ab671732' #os.getenv('uid')
-        db_password = 'pay73DCQkDz6LJ5i'  #os.getenv('pwd')
-        db_host = 'd191fc8e-4bab-4e51-8880-e4720556396b.c8l9ggsd0kmvoig3l8kg.databases.appdomain.cloud' #os.getenv('hostname')
-        db_port = '30223' #os.getenv('port', 'default_port')  # Default port if not specified
-        db_name =  'bludb' #os.getenv('database')
+        db_user = os.getenv('uid')
+        db_password = os.getenv('pwd')
+        db_host = os.getenv('hostname')
+        db_port = os.getenv('port', 'default_port')  # Default port if not specified
+        db_name =  os.getenv('database')
 
         conn_str = f"db2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?SECURITY=ssl"
         self.schema_name = schema_name
