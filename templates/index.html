@@ -9,6 +9,9 @@
 <div class="container mx-auto p-4">
     <div class="text-right mb-4">
         <h2 class="text-sm font-bold text-blue-600">Welcome, {{ user_id }}!</h2>
+        <a href="{{ url_for('reset_password') }}" class="inline-block">
+            <img src="{{ url_for('static', filename='images/gear1.png') }}" alt="Reset Password" class="h-6 w-6">
+        </a>
     </div>
     {% if message %}
     <div id="message-box" class="mb-4 p-4 text-center rounded-full border-2 {{ 'border-green-500 text-green-500' if 'successful' in message.lower() else 'border-red-500 text-red-500' }}">

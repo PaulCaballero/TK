@@ -1,5 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, Response
-from sqlalchemy import create_engine, text 
+from flask import Flask, render_template, request, redirect, url_for, session, Response, g
 from datetime import datetime, date, timedelta
 import io
 import ibm_db
@@ -11,7 +10,14 @@ app = Flask(__name__)
 app.secret_key = '!m@Tim3Keep3r' 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=6)
 
-db_ops = DatabaseOperations()
+
+@app.before_request
+def before_request():
+    """Ensure database connection is available throughout the request if user is logged in."""
+    if 'company' in session:
+        g.db_ops = DatabaseOperations()
+    else:
+        g.db_ops = None
 
 @app.route('/')
 def home():
@@ -27,11 +33,11 @@ def login():
         return redirect(url_for('authenticate'))
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
+    if 'company' in session:
+        g.db_ops.close()
     session.clear()
-    
     return redirect(url_for('login'))
 
 @app.route('/authenticate', methods=['POST'])
@@ -39,18 +45,18 @@ def authenticate():
     username = request.form.get('username')
     password = request.form.get('password')
     company = request.form.get('company')
+    
+    g.db_ops = DatabaseOperations(company)
     try:
-        row = db_ops.get_user_credentials(username, password, company)
-
+        row = g.db_ops.get_user_credentials(username, password, company)
+        session['company'] = company
+        
         # Fetch the first row
         if row:
             # Store user ID in session for authentication
-            # user_id = row[0]
-            # sk_emp = row[1]
             session['user_id'] = row[0]
             session['sk_emp'] = row[1]
             session['pos'] = row[2]
-            print("Invoke AddTimeEntry module")
             return redirect(url_for('add_time_entry'))  # Redirect to add_time_entry on successful login
             
         else:
@@ -65,10 +71,12 @@ def add_time_entry():
     user_id = session.get('user_id')
     sk_emp = session.get('sk_emp')
     pos = session.get('pos')
+    company = session.get('company')
     message = None  
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    total_entries = db_ops.count_time_entries(user_id)
+    g.db_ops = DatabaseOperations(company)
+    total_entries = g.db_ops.count_time_entries(user_id)
 
     if not user_id:
         return redirect(url_for('login'))  # Redirect to login if not authenticated
@@ -77,26 +85,27 @@ def add_time_entry():
         try:
             if 'time_in' in request.form:
                 # Process time-in logic
-                existing_entry=db_ops.get_time_in(user_id)
+                existing_entry=g.db_ops.get_time_in(user_id)
                 if existing_entry:
                     message = 'Time-in entry already recorded for today'
                 else: 
-                    db_ops.insert_time_in(sk_emp)
+                    g.db_ops.insert_time_in(sk_emp)
                     message = 'Time-in recorded successfully'
                     
             elif 'time_out' in request.form:
                 # Process time-out logic
-                existing_entry=db_ops.get_time_out(user_id)
+                existing_entry=g.db_ops.get_time_out(user_id)
                 if existing_entry:
-                    db_ops.insert_time_out(existing_entry[0])
+                    g.db_ops.insert_time_out(existing_entry[0])
                     message = 'Time-out recorded successfully'
                 else:
-                    message = 'No time-in entry found for today to clock out.'
+                    message = 'No time-in entry found for today to clock out / Time-in entry already recorded for today.'
                     
         except SQLAlchemyError as e:
             message = f"Database error: {str(e)}"
+
     # This part will execute for both GET and POST requests
-    time_entries = db_ops.select_time_entries(user_id, page, per_page)
+    time_entries = g.db_ops.select_time_entries(user_id, page, per_page)
     processed_entries = process_time_entries(time_entries)
    
     # Use a dictionary to pass all variables to the template at once
@@ -106,6 +115,8 @@ def add_time_entry():
 @app.route('/download_csv')
 def download_csv():
     user_id = session.get('user_id')
+    company = session.get('company')
+    g.db_ops = DatabaseOperations(company)
     if not user_id:
         return redirect(url_for('login'))  # Redirect to login if not authenticated
 
@@ -118,7 +129,7 @@ def download_csv():
     end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
 
     # Modify this function to filter based on the provided dates
-    time_entries = db_ops.select_time_entries_for_csv(user_id, start_date, end_date)
+    time_entries = g.db_ops.select_time_entries_for_csv(user_id, start_date, end_date)
     headers = ['Employee Name', 'Date', 'Time-In', 'Time-Out', 'Total Hours(hh:mm)', 'OT(hh:mm)'] # Define the CSV headers
 
     # Create a generator for CSV data
@@ -144,6 +155,33 @@ def download_csv():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment;filename=time_entries.csv'}
     )
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not authenticated
+
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+
+        if new_password != confirm_password:
+            return render_template('reset_password.html', error="New passwords do not match.")
+
+        company = session.get('company')
+        g.db_ops = DatabaseOperations(company)
+        if not g.db_ops.verify_current_password(session['user_id'], current_password):
+            print(current_password)
+            return render_template('reset_password.html', error="Current password is incorrect.")
+        
+        # If the current password is correct and new passwords match
+        # Update the password in the database
+        g.db_ops.update_user_password(session['user_id'], new_password)
+        return render_template('reset_password.html', message="Password successfully updated.")
+
+    return render_template('reset_password.html')
 
 def process_time_entries(time_entries):
     # Process time entries to extract date, time-in, time-out, and calculate total_hours
